@@ -1,37 +1,53 @@
 ﻿#include <iostream>
 #include <windows.h>
 #include <conio.h>
-
-#define fr for (int i = 0; i <
-#define end ; i++)
-
-#define fr2 for (int j = 0; j <
-#define end2 ; j++)
-
 using namespace std;
 
+/// <summary>
+/// Moving console handler around the console window.
+/// </summary>
+/// <param name="i">Needed X coord.</param>
+/// <param name="j">Needed Y coord.</param>
 void Goto(int i, int j) {
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), { (short)i, (short)j });
 }
 
+/// <summary>
+/// Item of the menu class.
+/// </summary>
 class Item {
 public:
+	/// <summary>
+	/// Name of the Item.
+	/// </summary>
 	const char* name;
+	/// <summary>
+	/// Index of the Item represents the number of the line on the screen from the top.
+	/// </summary>
 	int index;
+	/// <summary>
+	/// Empty default constructor. "name" member will be "default", "index" member will be 0.
+	/// </summary>
 	Item() : name("default"), index(0) {}
-	Item(const char* name, int i) : name(name)
-	{
-		index = i;
-	}
-	virtual void Show_Value() {
-		cout << "default";
-	}
+	/// <summary>
+	/// Main class constructor.
+	/// </summary>
+	/// <param name="name">Desired name of the new Item.</param>
+	/// <param name="i">Desired index of the new Item.</param>
+	Item(const char* name, int i) : name(name), index(i) {}
+	/// <summary>
+	/// Outputs a name of the Item from the top of the console and offsets "default" parameter by 20 characters in the same line.
+	/// </summary>
 	void Show() {
 		Goto(0, index);
 		cout << name;
 		Goto(20, index);
 		cout << "default";
 	}
+	/// <summary>
+	/// Outputs a name of the Item from the top of the console + indent and offsets "default" parameter by 40 characters in the same line.
+	/// </summary>
+	/// <param name="indent">Desired indent from the top of the console screen.</param>
 	void Show(int indent) {
 		Goto(0, index + indent);
 		cout << name;
@@ -40,17 +56,35 @@ public:
 	}
 };
 
+/// <summary>
+/// Top menu of the BIOS class.
+/// </summary>
 class Menu {
 public:
+	/// <summary>
+	/// Displayed name of the manu.
+	/// </summary>
 	const char* name;
+	/// <summary>
+	/// IsSelected flag.
+	/// </summary>
 	bool selected = false;
+	/// <summary>
+	/// Length of the name of the Menu.
+	/// </summary>
 	int x = 0;
+	/// <summary>
+	/// Items list.
+	/// </summary>
 	Item* items;
+	/// <summary>
+	/// Length of the items list.
+	/// </summary>
 	int items_length;
 
 	void Show() {
 		Goto(0, 2);
-		fr items_length end{
+		for (int i = 0; i < items_length; i++) {
 			items[i].Show(2);
 		}
 	}
@@ -58,9 +92,9 @@ public:
 
 void Clear() {
 	Goto(0, 2);
-	fr 15 end
+	for (int i = 0; i < 15; i++)
 	{
-		fr2 91 end2
+		for (int j = 0; j < 91; j++)
 		{
 			cout << ' ';
 		}
@@ -69,7 +103,8 @@ void Clear() {
 }
 
 int main()
-{
+{	
+	//Needed serious refactoring!!!
 	setlocale(LC_ALL, "ru");
 	
 	Menu m1 = Menu();
@@ -115,13 +150,12 @@ int main()
 
 	Menu menues[6] = { m1,m2,m25,m3,m4,m5 };
 	int n = 6;
-	fr n end
-	{
+	for (int i = 0; i < n; i++) {
 		Goto(i * 15, 0);
 		cout << menues[i].name;
 	}
 	cout << '\n';
-	fr 91 end{ cout << '-'; }
+	for (int i = 0; i < 91; i++) { cout << '-'; }
 
 	int m = 0;
 	menues[0].Show();
