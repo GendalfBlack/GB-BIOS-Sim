@@ -1,7 +1,10 @@
 ﻿#include <iostream>
 #include <windows.h>
 #include <conio.h>
+#include <string>
 using namespace std;
+
+HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 
 /// <summary>
 /// Moving console handler around the console window.
@@ -9,7 +12,14 @@ using namespace std;
 /// <param name="i">Needed X coord.</param>
 /// <param name="j">Needed Y coord.</param>
 void Goto(int i, int j) {
-	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), { (short)i, (short)j });
+	SetConsoleCursorPosition(h, { (short)i, (short)j });
+}
+void print(int x, int y, int _char) {
+	Goto(x, y);
+	cout << unsigned char(_char);
+}
+void print(int _char) {
+	cout << unsigned char(_char);
 }
 
 /// <summary>
@@ -20,7 +30,7 @@ public:
 	/// <summary>
 	/// Name of the Item.
 	/// </summary>
-	const char* name;
+	string name;
 	/// <summary>
 	/// Index of the Item represents the number of the line on the screen from the top.
 	/// </summary>
@@ -34,7 +44,7 @@ public:
 	/// </summary>
 	/// <param name="name">Desired name of the new Item.</param>
 	/// <param name="i">Desired index of the new Item.</param>
-	Item(const char* name, int i) : name(name), index(i) {}
+	Item(string name, int i) : name(name), index(i) {}
 	/// <summary>
 	/// Outputs a name of the Item from the top of the console and offsets "default" parameter by 20 characters in the same line.
 	/// </summary>
@@ -49,7 +59,7 @@ public:
 	/// </summary>
 	/// <param name="indent">Desired indent from the top of the console screen.</param>
 	void Show(int indent) {
-		Goto(0, index + indent);
+		Goto(1, index + indent);
 		cout << name;
 		Goto(40, index + indent);
 		cout << "default";
@@ -64,7 +74,7 @@ public:
 	/// <summary>
 	/// Displayed name of the manu.
 	/// </summary>
-	const char* name;
+	string name;
 	/// <summary>
 	/// IsSelected flag.
 	/// </summary>
@@ -82,16 +92,37 @@ public:
 	/// </summary>
 	int items_length;
 
+	Menu() : name("default"), items(nullptr), items_length(0){}
+	Menu(string name) {
+		this->name = name;
+		this->x = name.length();
+	}
+
+	void Setup(int index) {
+		Goto(index, 0);
+		if (selected)
+		{
+			SetConsoleTextAttribute(h, 121);
+		}
+		else {
+			SetConsoleTextAttribute(h, 23);
+		}
+		cout << name;
+		SetConsoleTextAttribute(h, 121);
+	}
+
 	void Show() {
-		Goto(0, 2);
+		Goto(1, 3);
+		SetConsoleTextAttribute(h, 121);
 		for (int i = 0; i < items_length; i++) {
 			items[i].Show(2);
 		}
+		SetConsoleTextAttribute(h, 23);
 	}
 };
 
 void Clear() {
-	Goto(0, 2);
+	Goto(1, 2);
 	for (int i = 0; i < 15; i++)
 	{
 		for (int j = 0; j < 91; j++)
@@ -102,30 +133,73 @@ void Clear() {
 	}
 }
 
+Menu * menues = new Menu[6];
+
+enum { LEFT_MAIN = 0, RIGHT_MAIN = 91, TOP_MAIN = 1, BOTTOM_MAIN = 27, RIGHT_SIDE = 128 };
+
+void DrawBG() {
+	SetConsoleTextAttribute(h, 23);
+	Goto(LEFT_MAIN, 0);
+	for (int i = LEFT_MAIN; i < 129; i++)
+	{
+		cout << ' ';
+	}
+	SetConsoleTextAttribute(h, 121);
+	Goto(TOP_MAIN, 2);
+	for (int i = LEFT_MAIN; i < RIGHT_SIDE * BOTTOM_MAIN; i++)
+	{
+		cout << ' ';
+	}
+}
+
+void DrawGrid() {
+	SetConsoleTextAttribute(h, 112);
+	print(LEFT_MAIN,	TOP_MAIN,		218);
+	print(RIGHT_MAIN,	TOP_MAIN,		194);
+	print(LEFT_MAIN,	BOTTOM_MAIN,	192);
+	print(RIGHT_MAIN,	BOTTOM_MAIN,	193);
+	print(RIGHT_SIDE,	TOP_MAIN,		191);
+	print(RIGHT_SIDE,	BOTTOM_MAIN,	217);
+
+	for (int i = 1; i < RIGHT_MAIN; i++) {
+		print(i, TOP_MAIN,		196);
+		print(i, BOTTOM_MAIN,	196);
+	}
+	for (int i = 1; i < 37; i++)
+	{
+		print(i + RIGHT_MAIN, TOP_MAIN,		196);
+		print(i + RIGHT_MAIN, BOTTOM_MAIN,	196);
+	}
+	for (int i = 2; i < 26; i++){
+		print(LEFT_MAIN,	i,	179);
+		print(RIGHT_MAIN,	i,	179);
+		print(RIGHT_SIDE,	i,	179);
+	}
+}
+
+void UpdateHeadMenu() {
+	cout << '\n';
+	SetConsoleTextAttribute(h, 121);
+	int n = 6;
+	for (int i = 0; i < n; i++) {
+		menues[i].Setup(i * 15);
+	}
+}
+
 int main()
 {	
 	//Needed serious refactoring!!!
-	setlocale(LC_ALL, "ru");
-	
-	Menu m1 = Menu();
-	Menu m2 = Menu();
-	Menu m25 = Menu();
-	Menu m3 = Menu();
-	Menu m4 = Menu();
-	Menu m5 = Menu();
+	system("chcp 437");
+	system("cls");
+	DrawBG();
 
-	m1.name = "Main";
-	m2.name = "Advanced";
-	m25.name = "Security";
-	m3.name = "Power";
-	m4.name = "Boot";
-	m5.name = "Exit";
-	m1.x = 4;
-	m2.x = 8;
-	m25.x = 8;
-	m3.x = 5;
-	m4.x = 4;
-	m5.x = 4;
+	Menu m1 = Menu("Main");
+	Menu m2 = Menu("Advanced");
+	Menu m25 = Menu("Security");
+	Menu m3 = Menu("Power");
+	Menu m4 = Menu("Boot");
+	Menu m5 = Menu("Exit");
+
 	m1.selected = true;
 
 	Item items[5] = {Item("System Time", 0), Item("System Date",1), Item("Legacy Diskette A",2), Item("Legacy Diskette B", 3), Item("Floppy 3 Mode Support", 4)};
@@ -148,20 +222,21 @@ int main()
 	m5.items = items5;
 	m5.items_length = 5;
 
-	Menu menues[6] = { m1,m2,m25,m3,m4,m5 };
-	int n = 6;
-	for (int i = 0; i < n; i++) {
-		Goto(i * 15, 0);
-		cout << menues[i].name;
-	}
-	cout << '\n';
-	for (int i = 0; i < 91; i++) { cout << '-'; }
+	menues[0] = m1;
+	menues[1] = m2;
+	menues[2] = m25;
+	menues[3] = m3;
+	menues[4] = m4;
+	menues[5] = m5;
+	
+	UpdateHeadMenu();
 
 	int m = 0;
 	menues[0].Show();
 	Goto(menues[0].x, 0);
 
 	while (true) {
+		
 		int keycode = _getch();
 		if (keycode == 77) //right arrow
 		{
@@ -186,6 +261,8 @@ int main()
 				Goto(m * 15 + menues[m].x, 0);
 			}
 		}
+		UpdateHeadMenu();
+		DrawGrid();
 	}
 	
 }
