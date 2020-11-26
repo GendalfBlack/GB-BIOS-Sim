@@ -1,5 +1,5 @@
 ﻿#include <iostream>
-#include <windows.h>
+#include <Windows.h>
 #include <conio.h>
 #include <string>
 #include <deque>
@@ -9,8 +9,11 @@ enum Borders { LEFT_MAIN = 0,			RIGHT_MAIN = 91,			TOP_MAIN = 1,			BOTTOM_MAIN =
 enum Main	 { LEFT_MAIN_IN = 1,		RIGHT_MAIN_IN = 90,			TOP_MAIN_IN = 2,		BOTTOM_MAIN_IN = 26 };
 enum Side    { LEFT_SIDE_IN = 92,		RIGHT_SIDE_IN = 128 };
 enum Controls{ TOP_CONTROLS_IN = 28,	BOTTOM_BOTTOM_IN = 30 };
-enum Colors  { BLUE_BG_WHITE_TEXT = 23, GREY_BG_BLACK_TEXT = 112 ,	GREY_BG_BLUE_TEXT = 121, CYAN_BG_BLACK_TEXT = 176,	CYAN_BG_WHITE_TEXT = 191};
-enum Keys	 { LEFT_ARROW = 75,			F1 = 59,					RIGHT_ARROW = 77};
+enum Colors  { BLUE_BG_WHITE_TEXT = 23, 
+			   GREY_BG_BLACK_TEXT = 112,GREY_BG_BLUE_TEXT = 121,	GREY_BG_WHITE_TEXT = 127,
+			   CYAN_BG_BLACK_TEXT = 176,CYAN_BG_WHITE_TEXT = 191,	DARKGREY_BG_WHITE_TEXT = 143};
+enum Keys	 { LEFT_ARROW = 75,			F1 = 59,					RIGHT_ARROW = 77,		ENTER = 13,
+			   UP_ARROW = 72,			DOWN_ARROW = 80,			PLUS = 43,				MINUS = 45};
 HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 
 /// <summary>
@@ -28,6 +31,13 @@ void print(int x, int y, int _char) {
 void print(int _char) {
 	cout << unsigned char(_char);
 }
+void hidecursor()
+{
+	CONSOLE_CURSOR_INFO info;
+	info.dwSize = 100;
+	info.bVisible = FALSE;
+	SetConsoleCursorInfo(h, &info);
+}
 
 /// <summary>
 /// Item of the menu class.
@@ -42,34 +52,153 @@ public:
 	/// Index of the Item represents the number of the line on the screen from the top.
 	/// </summary>
 	int index;
-	/// <summary>
-	/// Empty default constructor. "name" member will be "default", "index" member will be 0.
-	/// </summary>
-	Item() : name("default"), index(0) {}
+	bool selected = false;
+	deque<string>& options = options_;
+	char type = 'i';
+	char sub_menu = 0;
+private:
+	deque<string> options_;
+public:
 	/// <summary>
 	/// Main class constructor.
 	/// </summary>
 	/// <param name="name">Desired name of the new Item.</param>
 	/// <param name="i">Desired index of the new Item.</param>
-	Item(string name, int i) : name(name), index(i) {}
-	/// <summary>
-	/// Outputs a name of the Item from the top of the console and offsets "default" parameter by 20 characters in the same line.
-	/// </summary>
-	void Show() {
-		Goto(0, index);
-		cout << name;
-		Goto(20, index);
-		cout << "default";
+	Item(string name, int i) : name(name), index(i) { AddOption("default"); }
+	Item(string name, int i, deque<string> options) : name(name), index(i) {
+		this->options = options;
+	}
+	virtual void Change(char dir) {
+		if (dir == '+') {
+			options.push_back(options.front());
+			options.pop_front();
+		} else if (dir == '-'){
+			options.push_front(options.back());
+			options.pop_back();
+		}
+	}
+	virtual bool Editable() { return false; }
+	virtual void Change_Sub() {};
+	void AddOption(string value) {
+		options.push_back(value);
 	}
 	/// <summary>
 	/// Outputs a name of the Item from the top of the console + indent and offsets "default" parameter by 40 characters in the same line.
 	/// </summary>
 	/// <param name="indent">Desired indent from the top of the console screen.</param>
-	void Show(int indent) {
+	virtual void Show(int indent) {
+		if (selected)
+		{
+			SetConsoleTextAttribute(h, GREY_BG_WHITE_TEXT);
+		}
+		else {
+			SetConsoleTextAttribute(h, GREY_BG_BLUE_TEXT);
+		}
 		Goto(LEFT_MAIN_IN, index + indent);
 		cout << name;
 		Goto(LEFT_MAIN_IN + 40, index + indent);
-		cout << "default";
+		cout << options.front();
+	}
+};
+
+class Time : public Item{
+public:
+	deque<string> op1;
+	deque<string> op2;
+	deque<string> op3;
+	char isEdit = 0;
+
+	Time(string name, int i, deque<string> op1, deque<string> op2, deque<string> op3 ) : Item(name, i) {
+		this->op1 = op1;
+		this->op2 = op2;
+		this->op3 = op3;
+		this->options = op1;
+		this->type = 't';
+		this->sub_menu = 1;
+	}
+	virtual void Change(char dir) {
+		dir = 2 * (isEdit - 1) + dir;
+		switch (dir)
+		{
+		case 1:
+			op1.push_back(op1.front());
+			op1.pop_front();
+			break;
+		case 2:
+			op1.push_front(op1.back());
+			op1.pop_back();
+			break;
+		case 3:
+			op2.push_back(op2.front());
+			op2.pop_front();
+			break;
+		case 4:
+			op2.push_front(op2.back());
+			op2.pop_back();
+			break;
+		case 5:
+			op3.push_back(op3.front());
+			op3.pop_front();
+			break;
+		case 6:
+			op3.push_front(op3.back());
+			op3.pop_back();
+			break;
+		default:
+			break;
+		}
+	}
+	virtual bool Editable() { return true; }
+	virtual void Change_Sub() {
+		isEdit++;
+		if (isEdit == 4)
+		{
+			isEdit = 0;
+		}
+	}
+	virtual void Show(int indent) {
+		Goto(LEFT_MAIN_IN, index + indent);
+		if (selected)
+		{
+			SetConsoleTextAttribute(h, GREY_BG_WHITE_TEXT);
+			cout << name;
+			Goto(LEFT_MAIN_IN + 40, index + indent);
+			if (isEdit != 0)
+			{
+				if (isEdit == 1)
+				{
+					SetConsoleTextAttribute(h, DARKGREY_BG_WHITE_TEXT);
+					cout << op1.front();
+					SetConsoleTextAttribute(h, GREY_BG_WHITE_TEXT);
+					cout << '/' << op2.front() << '/' << op3.front();
+				}
+				else if (isEdit == 2) {
+					
+					SetConsoleTextAttribute(h, GREY_BG_WHITE_TEXT);
+					cout << op1.front() << '/';
+					SetConsoleTextAttribute(h, DARKGREY_BG_WHITE_TEXT);
+					cout << op2.front();
+					SetConsoleTextAttribute(h, GREY_BG_WHITE_TEXT);
+					cout << '/' << op3.front();
+				}
+				else if (isEdit == 3) {
+					SetConsoleTextAttribute(h, GREY_BG_WHITE_TEXT);
+					cout << op1.front() << '/' << op2.front() << '/';
+					SetConsoleTextAttribute(h, DARKGREY_BG_WHITE_TEXT);
+					cout << op3.front();
+				}
+			}
+			else {
+				SetConsoleTextAttribute(h, GREY_BG_WHITE_TEXT);
+				cout << op1.front() << '/' << op2.front() << '/' << op3.front();
+			}
+		}
+		else {
+			SetConsoleTextAttribute(h, GREY_BG_BLUE_TEXT);
+			cout << name;
+			Goto(LEFT_MAIN_IN + 40, index + indent);
+			cout << op1.front() << '/' << op2.front() << '/' << op3.front();
+		}
 	}
 };
 
@@ -89,12 +218,12 @@ public:
 	/// <summary>
 	/// Items list.
 	/// </summary>
-	deque<Item> items;
+	deque<Item*> items;
 
-	Menu() : name("default"), items(deque<Item>()), selected(false){	}
+	Menu() : name("default"), items(deque<Item*>()), selected(false){	}
 	Menu(string name) {
 		this->name = name;
-		items = deque<Item>();
+		items = deque<Item*>();
 	}
 
 	void Setup(int index) {
@@ -109,13 +238,13 @@ public:
 		for (int i = 0; i < (15 - name.length()) / 2; i++) { cout << ' '; }
 		cout << name;
 		for (int i = 0; i < (15 - name.length()) / 2; i++) { cout << ' '; }
-		SetConsoleTextAttribute(h, 121);
+		SetConsoleTextAttribute(h, GREY_BG_BLUE_TEXT);
 	}
 
 	void Show() {
 		SetConsoleTextAttribute(h, GREY_BG_BLUE_TEXT);
 		for (int i = 0; i < items.size(); i++) {
-			items.at(i).Show(2);
+			items[i]->Show(TOP_MAIN_IN);
 		}
 		SetConsoleTextAttribute(h, BLUE_BG_WHITE_TEXT);
 	}
@@ -228,9 +357,10 @@ void UpdateHeadMenu() {
 }
 
 int main()
-{	
+{
 	system("chcp 437");
 	system("cls");
+	hidecursor();
 	DrawBG();
 
 	menues.push_back(Menu("Main"));
@@ -242,34 +372,62 @@ int main()
 
 	menues[0].selected = true;
 
-	menues[0].items.push_back(Item("System Time", 0));
-	menues[0].items.push_back(Item("System Date", 1));
-	menues[0].items.push_back(Item("Legacy Diskette A", 2));
-	menues[0].items.push_back(Item("Legacy Diskette B", 3));
-	menues[0].items.push_back(Item("Floppy 3 Mode Support", 4));
-
-	menues[1].items.push_back(Item("CPU Speed", 0));
-	menues[1].items.push_back(Item("CPU: System Frequency Multiple", 1));
-	menues[1].items.push_back(Item("System/PCI Frequency (Mhz)", 2));
-	menues[1].items.push_back(Item("System /SDRAM Frequency Ratio", 3));
-	menues[1].items.push_back(Item("Load Performance Setting", 4));
 	
-	menues[3].items.push_back(Item("Power Management", 0));
-	menues[3].items.push_back(Item("Video Off Option", 1));
-	menues[3].items.push_back(Item("Video Off Method", 2));
-	menues[3].items.push_back(Item("HDD Power Down", 3));
-	menues[3].items.push_back(Item("Suspend-RAM Capability", 4));
+	deque<string> hour = deque<string>();
+	for (int i = 0; i < 24; i++) { hour.push_back(to_string(i)); }
+	deque<string> minutes = deque<string>();
+	for (int i = 0; i < 60; i++) { minutes.push_back(to_string(i)); }
+	deque<string> seconds = deque<string>();
+	for (int i = 0; i < 60; i++) { seconds.push_back(to_string(i)); }
+	menues[0].items.push_back(new Time("System Time", 0, hour, minutes, seconds));
 
-	menues[4].items.push_back(Item("1. IDE Hard Drive", 0));
-	menues[4].items.push_back(Item("2. ATAPI CD-ROM", 1));
-	menues[4].items.push_back(Item("3. Removable Device", 2));
-	menues[4].items.push_back(Item("4. Other Boot Device", 3));
+	deque<string> day = deque<string>();
+	for (int i = 1; i < 32; i++) { day.push_back(to_string(i)); }
+	deque<string> month = deque<string>();
+	for (int i = 1; i < 13; i++) { month.push_back(to_string(i)); }
+	deque<string> year = deque<string>();
+	for (int i = 1999; i < 2020; i++) { year.push_back(to_string(i)); }
+	menues[0].items.push_back(new Time("System Date", 1, day, month, year));
+
+	menues[0].items.push_back(new Item("Legacy Diskette A", 2,
+		{ "None",
+		"360K, 5.25 in.",
+		"1.2M, 5.25 in.",
+		"720K, 3.5 in.",
+		"1.44M, 3.5 in.",
+		"2.88M, 3.5 in."
+		}));
+	menues[0].items.push_back(new Item("Legacy Diskette B", 3,
+		{ "None",
+		"360K, 5.25 in.",
+		"1.2M, 5.25 in.",
+		"720K, 3.5 in.",
+		"1.44M, 3.5 in.",
+		"2.88M, 3.5 in."
+		}));
+	menues[0].items.push_back(new Item("Floppy 3 Mode Support", 4, {"Disabled", "Enabled"}));
+	menues[1].items.push_back(new Item("CPU Speed", 0));
+	menues[1].items.push_back(new Item("CPU: System Frequency Multiple", 1));
+	menues[1].items.push_back(new Item("System/PCI Frequency (Mhz)", 2));
+	menues[1].items.push_back(new Item("System /SDRAM Frequency Ratio", 3));
+	menues[1].items.push_back(new Item("Load Performance Setting", 4));
 	
-	menues[5].items.push_back(Item("Exit Saving Changes", 0));
-	menues[5].items.push_back(Item("Exit Discarding Changes", 1));
-	menues[5].items.push_back(Item("Load Setup Defaults", 2));
-	menues[5].items.push_back(Item("Discard Changes", 3));
-	menues[5].items.push_back(Item("Save Changes", 4));
+	menues[3].items.push_back(new Item("Power Management", 0));
+	menues[3].items.push_back(new Item("Video Off Option", 1));
+	menues[3].items.push_back(new Item("Video Off Method", 2));
+	menues[3].items.push_back(new Item("HDD Power Down", 3));
+	menues[3].items.push_back(new Item("Suspend-RAM Capability", 4));
+
+	menues[4].items.push_back(new Item("1. IDE Hard Drive", 0));
+	menues[4].items.push_back(new Item("2. ATAPI CD-ROM", 1));
+	menues[4].items.push_back(new Item("3. Removable Device", 2));
+	menues[4].items.push_back(new Item("4. Other Boot Device", 3));
+	
+	menues[5].items.push_back(new Item("Exit Saving Changes", 0));
+	menues[5].items.push_back(new Item("Exit Discarding Changes", 1));
+	menues[5].items.push_back(new Item("Load Setup Defaults", 2));
+	menues[5].items.push_back(new Item("Discard Changes", 3));
+	menues[5].items.push_back(new Item("Save Changes", 4));
 		
 	UpdateHeadMenu();
 	UpdateControls();
@@ -277,33 +435,96 @@ int main()
 	int m = 0;
 	menues[0].Show();
 	Goto(menues[0].name.length(), 0);
-
+	int selected_menu = 0;
+	int selected_item = -1;
 	while (true) {
-		
 		int keycode = _getch();
 		if (keycode == RIGHT_ARROW)
 		{
-			if (m <= 4)
+			if (selected_item != -1)
 			{
-				m++;
-				menues[m - 1].selected = false;
-				menues[m].selected = true;
-				ClearMain();
-				menues[m].Show();
+				menues[selected_menu].items[selected_item]->selected = false;
+				selected_item = -1;
+			}
+
+			if (selected_menu < 5)
+			{
+				selected_menu++;
+				menues[selected_menu - 1].selected = false;
+				menues[selected_menu].selected = true;
 			}
 		}
 		else if (keycode == LEFT_ARROW) {
-			if (m >= 1)
+			if (selected_item != -1)
 			{
-				m--;
-				menues[m + 1].selected = false;
-				menues[m].selected = true;
-				ClearMain();
-				menues[m].Show();
+				menues[selected_menu].items[selected_item]->selected = false;
+				selected_item = -1;
+			}
+			if (selected_menu > 0)
+			{
+				selected_menu--;
+				menues[selected_menu + 1].selected = false;
+				menues[selected_menu].selected = true;
 			}
 		}
+		else if (keycode == DOWN_ARROW) {
+			if (selected_item < (int)menues[selected_menu].items.size() - 1)
+			{
+				selected_item++;
+				if (selected_item == 0)
+				{
+					menues[selected_menu].items[selected_item]->selected = true;
+				}
+				else {
+					menues[selected_menu].items[selected_item - 1]->selected = false;
+					menues[selected_menu].items[selected_item]->selected = true;
+				}
+			}
+		}
+		else if (keycode == UP_ARROW) {
+			if(selected_item > 0){
+				selected_item--;
+				if (selected_item == menues[selected_menu].items.size() - 1)
+				{
+					menues[selected_menu].items[selected_item]->selected = true;
+				}
+				else {
+					menues[selected_menu].items[selected_item + 1]->selected = false;
+					menues[selected_menu].items[selected_item]->selected = true;
+				}
+			}		}
+		else if (keycode == PLUS) {
+			if (selected_item >= 0) {
+				if (menues[selected_menu].items[selected_item]->Editable()) {
+					menues[selected_menu].items[selected_item]->Change(1);
+				}else if (menues[selected_menu].items[selected_item]->type == 'i')
+				{
+					menues[selected_menu].items[selected_item]->Change('+');
+				}
+			}
+		}
+		else if (keycode == MINUS) {
+			if (selected_item >= 0) {
+				if (menues[selected_menu].items[selected_item]->Editable()) {
+					menues[selected_menu].items[selected_item]->Change(2);
+				}else if (menues[selected_menu].items[selected_item]->type == 'i')
+				{
+					menues[selected_menu].items[selected_item]->Change('-');
+				}
+			}
+		}
+		else if (keycode == ENTER) {
+			if (menues[selected_menu].items[selected_item]->Editable())
+			{
+				menues[selected_menu].items[selected_item]->Change_Sub();
+			}
+		}
+		ClearMain();
+		menues[selected_menu].Show();
 		UpdateHeadMenu();
 		DrawGrid();
+		/*cout << keycode;
+		cin.get();*/
 	}
 	
 }
