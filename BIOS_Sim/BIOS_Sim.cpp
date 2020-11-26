@@ -326,7 +326,7 @@ void DrawControls(string key, string description) {
 }
 void UpdateControls() {
 	Goto(130 / 4 * 0, TOP_CONTROLS_IN);
-	DrawControls("   F1", "Hepl");
+	DrawControls("   F1", "Help");
 	Goto(130 / 4 * 0, TOP_CONTROLS_IN + 1);
 	DrawControls("   ESC", "Exit");
 
