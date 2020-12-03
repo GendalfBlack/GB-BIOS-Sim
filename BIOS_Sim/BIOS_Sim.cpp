@@ -94,10 +94,13 @@ public:
 		else {
 			SetConsoleTextAttribute(h, GREY_BG_BLUE_TEXT);
 		}
-		Goto(LEFT_MAIN_IN, index + indent);
+		Goto(LEFT_MAIN_IN + 1, index + indent);
 		cout << name;
 		Goto(LEFT_MAIN_IN + 40, index + indent);
-		cout << options.front();
+		if (options.front() != " ")
+		{
+			cout << '[' << options.front() << ']';
+		}
 	}
 };
 
@@ -157,7 +160,7 @@ public:
 		}
 	}
 	virtual void Show(int indent) {
-		Goto(LEFT_MAIN_IN, index + indent);
+		Goto(LEFT_MAIN_IN + 1, index + indent);
 		if (selected)
 		{
 			SetConsoleTextAttribute(h, GREY_BG_WHITE_TEXT);
@@ -220,7 +223,7 @@ public:
 	/// </summary>
 	deque<Item*> items;
 
-	Menu() : name("default"), items(deque<Item*>()), selected(false){	}
+	Menu() : name("default"), items(deque<Item*>()), selected(false) {	}
 	Menu(string name) {
 		this->name = name;
 		items = deque<Item*>();
@@ -244,9 +247,15 @@ public:
 	void Show() {
 		SetConsoleTextAttribute(h, GREY_BG_BLUE_TEXT);
 		for (int i = 0; i < items.size(); i++) {
-			items[i]->Show(TOP_MAIN_IN);
+			items[i]->Show((BOTTOM_MAIN_IN - TOP_MAIN_IN) / 2 - items.size() / 2);
 		}
 		SetConsoleTextAttribute(h, BLUE_BG_WHITE_TEXT);
+	}
+	void Push_item(string name, deque<string> options) {
+		items.push_back(new Item(name, items.size(), options));
+	}
+	void Add_gap() {
+		items.push_back(new Item(" ", items.size(), { " " }));
 	}
 	operator bool() { return name.length(); }
 };
@@ -372,7 +381,6 @@ int main()
 
 	menues[0].selected = true;
 
-	
 	deque<string> hour = deque<string>();
 	for (int i = 0; i < 24; i++) { hour.push_back(to_string(i)); }
 	deque<string> minutes = deque<string>();
@@ -389,45 +397,76 @@ int main()
 	for (int i = 1999; i < 2020; i++) { year.push_back(to_string(i)); }
 	menues[0].items.push_back(new Time("System Date", 1, day, month, year));
 
-	menues[0].items.push_back(new Item("Legacy Diskette A", 2,
+	menues[0].Push_item("Legacy Diskette A",
 		{ "None",
 		"360K, 5.25 in.",
 		"1.2M, 5.25 in.",
 		"720K, 3.5 in.",
 		"1.44M, 3.5 in.",
 		"2.88M, 3.5 in."
-		}));
-	menues[0].items.push_back(new Item("Legacy Diskette B", 3,
+		});
+	menues[0].Push_item("Legacy Diskette B",
 		{ "None",
 		"360K, 5.25 in.",
 		"1.2M, 5.25 in.",
 		"720K, 3.5 in.",
 		"1.44M, 3.5 in.",
 		"2.88M, 3.5 in."
-		}));
-	menues[0].items.push_back(new Item("Floppy 3 Mode Support", 4, {"Disabled", "Enabled"}));
-	menues[1].items.push_back(new Item("CPU Speed", 0));
-	menues[1].items.push_back(new Item("CPU: System Frequency Multiple", 1));
-	menues[1].items.push_back(new Item("System/PCI Frequency (Mhz)", 2));
-	menues[1].items.push_back(new Item("System /SDRAM Frequency Ratio", 3));
-	menues[1].items.push_back(new Item("Load Performance Setting", 4));
-	
-	menues[3].items.push_back(new Item("Power Management", 0));
-	menues[3].items.push_back(new Item("Video Off Option", 1));
-	menues[3].items.push_back(new Item("Video Off Method", 2));
-	menues[3].items.push_back(new Item("HDD Power Down", 3));
-	menues[3].items.push_back(new Item("Suspend-RAM Capability", 4));
+		});
+	menues[0].Push_item("Floppy 3 Mode Support", { "Disabled", "Enabled" });
 
-	menues[4].items.push_back(new Item("1. IDE Hard Drive", 0));
-	menues[4].items.push_back(new Item("2. ATAPI CD-ROM", 1));
-	menues[4].items.push_back(new Item("3. Removable Device", 2));
-	menues[4].items.push_back(new Item("4. Other Boot Device", 3));
+	menues[1].Push_item("CPU Speed", { "1400 Mhz" });
+	menues[1].Push_item("CPU: System Frequency Multiple", { "12.0x" });
+	menues[1].Push_item("System/PCI Frequency (Mhz)", { "133/33" });
+	menues[1].Push_item("System /SDRAM Frequency Ratio", { "Auto" });
+	menues[1].Push_item("Load Performance Setting", { "Normal" });
+	menues[1].Push_item("CPU Vcore", { "1.750V" });
+	menues[1].Push_item("CPU Level 1 Cache", { "Enabled" });
+	menues[1].Push_item("CPU Level 2 Cache", { "Enabled" });
+	menues[1].Push_item("CPU Level 2 Cache ECC Check", { "Disabled" });
+	menues[1].Push_item("BIOS Update", { "Enabled" });
+	menues[1].Push_item("PS/2 Mouse Function Control", { "Auto" });
+	menues[1].Push_item("USB Legacy Support", { "Auto" });
+	menues[1].Push_item("OS/2 Onboard Memory > 64 M", { "Disabled" });
+	menues[1].Push_item("Language", { "English" });
+	menues[1].Push_item("Installed Memory", { "768 MB" });
+	menues[1].Push_item("Halt On",
+		{ "All Errors",	 
+		"No Error",
+		"All but Keyboard",
+		"All but Disk",
+		"All but Disk / Keyboard" 
+		});
+
+	menues[2].Push_item("Supervisor Password", { "Disabled" });
+	menues[2].Push_item("User Password", { "Disabled" });
+
+	menues[3].Push_item("Power Management", { "User Define" });
+	menues[3].Push_item("Video Off Option", { "Suspend -> Off" });
+	menues[3].Push_item("Video Off Method", { "DPMS OFF" });
+	menues[3].Push_item("HDD Power Down", {"Disabled"});
+	menues[3].Push_item("Suspend-RAM Capability", { "Disabled" });
+	menues[3].Add_gap();
+	menues[3].Push_item("Suspend Mode", { "Disabled" });
+	menues[3].Push_item("PWR Button < 4 Secs", { "Soft Off" });
+	menues[3].Push_item("CPU Thermal Option", { "Disabled" });
+
+	menues[4].Push_item("1. IDE Hard Drive", {"None", "IC35L040AVVA07-0"});
+	menues[4].Push_item("2. ATAPI CD-ROM", { "None", "PLEXTOR PX-W4012TA" });
+	menues[4].Push_item("3. Removable Device", { "None", "Legacy Floppy" });
+	menues[4].Push_item("4. Other Boot Device", { "Disabled"});
+	menues[4].Add_gap();
+	menues[4].Push_item("Plug & Play O/S", { "Yes"});
+	menues[4].Push_item("Reset Configuration Data", { "No"});
+	menues[4].Push_item("Boot Virus Detection", { "Enabled"});
+	menues[4].Push_item("Quick Power On Self Test", { "Enabled"});
+	menues[4].Push_item("Boot Up Floppy Seek", { "Disabled"});
 	
-	menues[5].items.push_back(new Item("Exit Saving Changes", 0));
-	menues[5].items.push_back(new Item("Exit Discarding Changes", 1));
-	menues[5].items.push_back(new Item("Load Setup Defaults", 2));
-	menues[5].items.push_back(new Item("Discard Changes", 3));
-	menues[5].items.push_back(new Item("Save Changes", 4));
+	menues[5].Push_item("Exit Saving Changes", {" "});
+	menues[5].Push_item("Exit Discarding Changes", { " " });
+	menues[5].Push_item("Load Setup Defaults", { " " });
+	menues[5].Push_item("Discard Changes", { " " });
+	menues[5].Push_item("Save Changes", { " " });
 		
 	UpdateHeadMenu();
 	UpdateControls();
